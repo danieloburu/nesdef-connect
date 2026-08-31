@@ -10,8 +10,13 @@ import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 export default function LoginScreen() {
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -19,7 +24,7 @@ export default function LoginScreen() {
     setLoading(true);
     setMessage('');
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -32,9 +37,6 @@ export default function LoginScreen() {
       return;
     }
 
-    console.log('LOGIN DATA:', data);
-    setMessage('Login successful');
-
     router.replace('/');
   }
 
@@ -42,9 +44,26 @@ export default function LoginScreen() {
     setLoading(true);
     setMessage('');
 
+    if (
+      firstName.trim() === '' ||
+      lastName.trim() === '' ||
+      email.trim() === '' ||
+      password.trim() === ''
+    ) {
+      setMessage('Please fill out all fields.');
+      setLoading(false);
+      return;
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+        },
+      },
     });
 
     setLoading(false);
@@ -55,20 +74,50 @@ export default function LoginScreen() {
       return;
     }
 
-    console.log('SIGNUP DATA:', data);
-
     if (data.session) {
-      setMessage('Account created and signed in.');
       router.replace('/');
     } else {
       setMessage('Account created. Check your email to confirm your account.');
     }
   }
 
+  function switchToCreateAccount() {
+    setIsCreatingAccount(true);
+    setMessage('');
+  }
+
+  function switchToSignIn() {
+    setIsCreatingAccount(false);
+    setFirstName('');
+    setLastName('');
+    setMessage('');
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>NESDEF Connect</Text>
-      <Text style={styles.subtitle}>Member Login</Text>
+      <Text style={styles.title}>NESDF Connect</Text>
+
+      <Text style={styles.subtitle}>
+        {isCreatingAccount ? 'Create Account' : 'Member Login'}
+      </Text>
+
+      {isCreatingAccount && (
+        <>
+          <TextInput
+            style={styles.input}
+            placeholder="First Name"
+            value={firstName}
+            onChangeText={setFirstName}
+          />
+
+          <TextInput
+            style={styles.input}
+            placeholder="Last Name"
+            value={lastName}
+            onChangeText={setLastName}
+          />
+        </>
+      )}
 
       <TextInput
         style={styles.input}
@@ -87,21 +136,43 @@ export default function LoginScreen() {
         onChangeText={setPassword}
       />
 
-      <View style={styles.button}>
-        <Button
-          title={loading ? 'Please wait...' : 'Sign In'}
-          onPress={signIn}
-          disabled={loading}
-        />
-      </View>
+      {isCreatingAccount ? (
+        <>
+          <View style={styles.button}>
+            <Button
+              title={loading ? 'Please wait...' : 'Create Account'}
+              onPress={signUp}
+              disabled={loading}
+            />
+          </View>
 
-      <View style={styles.button}>
-        <Button
-          title="Create Account"
-          onPress={signUp}
-          disabled={loading}
-        />
-      </View>
+          <View style={styles.button}>
+            <Button
+              title="Back to Sign In"
+              onPress={switchToSignIn}
+              disabled={loading}
+            />
+          </View>
+        </>
+      ) : (
+        <>
+          <View style={styles.button}>
+            <Button
+              title={loading ? 'Please wait...' : 'Sign In'}
+              onPress={signIn}
+              disabled={loading}
+            />
+          </View>
+
+          <View style={styles.button}>
+            <Button
+              title="Create an Account"
+              onPress={switchToCreateAccount}
+              disabled={loading}
+            />
+          </View>
+        </>
+      )}
 
       {message !== '' && (
         <Text style={styles.message}>{message}</Text>
