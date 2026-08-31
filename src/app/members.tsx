@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { router, useFocusEffect } from 'expo-router';
 import { supabase } from '../lib/supabase';
 
 type Member = {
@@ -22,9 +23,11 @@ export default function MembersScreen() {
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    fetchMembers();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchMembers();
+    }, [])
+  );
 
   async function fetchMembers() {
     setLoading(true);
@@ -76,7 +79,7 @@ export default function MembersScreen() {
             key={member.id}
             style={styles.card}
             onPress={() => {
-              console.log('Selected member:', member.id);
+              router.push(`/members/${member.id}`);
             }}
           >
             <Text style={styles.name}>

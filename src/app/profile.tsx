@@ -12,12 +12,20 @@ type Profile = {
   last_name: string | null;
   phone: string | null;
   membership_status: string | null;
-  role: string;
   joined_at: string | null;
+};
+
+type Position = {
+  name: string;
+};
+
+type MemberPosition = {
+  positions: Position | null;
 };
 
 export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [positions, setPositions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
@@ -40,22 +48,46 @@ export default function ProfileScreen() {
       return;
     }
 
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .select(
-        'first_name, last_name, phone, membership_status, role, joined_at'
+        'first_name, last_name, phone, membership_status, joined_at'
       )
       .eq('id', user.id)
       .single();
 
-    if (error) {
-      console.error('PROFILE ERROR:', error);
-      setMessage(error.message);
+    if (profileError) {
+      console.error('PROFILE ERROR:', profileError);
+      setMessage(profileError.message);
       setLoading(false);
       return;
     }
 
-    setProfile(data);
+    const { data: positionData, error: positionError } = await supabase
+      .from('member_positions')
+      .select(`
+        positions (
+          name
+        )
+      `)
+      .eq('member_id', user.id);
+
+    if (positionError) {
+      console.error('POSITION ERROR:', positionError);
+      setMessage(positionError.message);
+      setLoading(false);
+      return;
+    }
+
+    setProfile(profileData);
+
+    const positionNames =
+      (positionData as MemberPosition[] | null)
+        ?.map((item) => item.positions?.name)
+        .filter((name): name is string => Boolean(name)) ?? [];
+
+    setPositions(positionNames);
+
     setLoading(false);
   }
 
@@ -98,6 +130,15 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.card}>
+        <Text style={styles.label}>NESDF Position</Text>
+        <Text style={styles.value}>
+          {positions.length > 0
+            ? positions.join(', ')
+            : 'Member'}
+        </Text>
+      </View>
+
+      <View style={styles.card}>
         <Text style={styles.label}>Joined</Text>
         <Text style={styles.value}>
           {profile.joined_at ?? 'Not provided'}
@@ -108,13 +149,6 @@ export default function ProfileScreen() {
         <Text style={styles.label}>Phone</Text>
         <Text style={styles.value}>
           {profile.phone ?? 'Not provided'}
-        </Text>
-      </View>
-
-      <View style={styles.card}>
-        <Text style={styles.label}>App Role</Text>
-        <Text style={styles.value}>
-          {profile.role}
         </Text>
       </View>
     </View>
