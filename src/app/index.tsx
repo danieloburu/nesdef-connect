@@ -1,14 +1,21 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { supabase } from '../lib/supabase';
-import { Button, Pressable, StyleSheet, Text, View } from 'react-native';
-
+import {
+  Button,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
 export default function HomeScreen() {
   const [totalContributions, setTotalContributions] = useState(0);
+  const [role, setRole] = useState<string | null>(null);
 
   useEffect(() => {
     fetchContributions();
+    fetchProfile();
   }, []);
 
   async function fetchContributions() {
@@ -28,9 +35,34 @@ export default function HomeScreen() {
     setTotalContributions(total);
   }
 
+  async function fetchProfile() {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      console.error('Error loading user:', userError);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error loading profile:', error);
+      return;
+    }
+
+    setRole(data.role);
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>NESDEF Connect</Text>
+      <Text style={styles.title}>NESDF Connect</Text>
 
       <Text style={styles.welcome}>Welcome</Text>
 
@@ -39,10 +71,29 @@ export default function HomeScreen() {
         onPress={() => router.push('/contributions')}
       >
         <Text style={styles.cardTitle}>My Contributions</Text>
+
         <Text style={styles.amount}>
           ${totalContributions.toFixed(2)}
         </Text>
       </Pressable>
+
+      <Pressable
+        style={styles.card}
+        onPress={() => router.push('/profile')}
+      >
+        <Text style={styles.cardTitle}>My Profile</Text>
+        <Text>View your NESDF membership</Text>
+      </Pressable>
+
+      {role === 'admin' && (
+        <Pressable
+          style={styles.card}
+          onPress={() => router.push('/members')}
+        >
+          <Text style={styles.cardTitle}>Members</Text>
+          <Text>Manage NESDF members</Text>
+        </Pressable>
+      )}
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Upcoming Events</Text>

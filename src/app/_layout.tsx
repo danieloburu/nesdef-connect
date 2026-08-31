@@ -3,10 +3,11 @@ import { Stack } from 'expo-router';
 export default function RootLayout() {
   return (
     <Stack>
+
       <Stack.Screen
         name="index"
         options={{
-          title: 'NESDEF Connect',
+          title: 'NESDF Connect',
           headerShown: false,
         }}
       />
@@ -17,8 +18,27 @@ export default function RootLayout() {
           title: 'My Contributions',
         }}
       />
+
+      <Stack.Screen
+        name="members"
+        options={{
+          title: 'Members',
+        }}
+      />
+
+      <Stack.Screen
+        name="login"
+        options={{
+          title: 'Login',
+          headerShown: false,
+        }}
+      />
+      <Stack.Screen
+        name="profile"
+        options={{
+          title: 'My Profile',
+        }}
+      />
     </Stack>
-
-
   );
 }
